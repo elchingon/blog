@@ -1,0 +1,384 @@
+<?xml version="1.0"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title></title>
+    <link>http://blog.spark.io</link>
+    <atom:link href="http://blog.spark.io/feed.xml" rel="self" type="application/rss+xml" />
+    <description></description>
+    <language>en-us</language>
+    <pubDate>Sat, 01 Feb 2014 15:57:23 +0000</pubDate>
+    <lastBuildDate>Sat, 01 Feb 2014 15:57:23 +0000</lastBuildDate>
+
+    
+    
+    <item>
+      <title>Wow, much reliable, so better</title>
+      <link>http://blog.spark.io/2014/01/24/sprint-four/</link>
+      <pubDate>Fri, 24 Jan 2014 00:00:00 +0000</pubDate>
+      <author></author>
+      <guid>http://blog.spark.io/2014/01/24/sprint-four</guid>
+      <description>&lt;p&gt;We just completed our fourth sprint on the Spark platform, where our main focus was increasing the reliability and performance of the Cloud/Core combo. This involved improvements to a variety of areas, including the web IDE, the firmware, and our cross-compile service that builds binaries to be flashed onto the Core.&lt;/p&gt;
+
+&lt;h3 id=&#39;example_apps_in_the_ide&#39;&gt;Example apps in the IDE&lt;/h3&gt;
+
+&lt;p&gt;The most visible enhancement we put in place during this sprint was adding example Core apps to the IDE that can you can fork and edit. Check it out:&lt;/p&gt;
+&lt;div class=&#39;full zoomable&#39;&gt;&lt;img src=&#39;/images/example-apps.png&#39; /&gt;&lt;/div&gt;
+&lt;p&gt;When you open an example app, you can fork it into your own apps in order to edit it and flash it onto a Core.&lt;/p&gt;
+&lt;div class=&#39;full zoomable&#39;&gt;&lt;img src=&#39;/images/fork.png&#39; /&gt;&lt;/div&gt;
+&lt;p&gt;These apps are populated from a Github repository at &lt;a href=&#39;http://www.github.com/spark/examples&#39;&gt;github.com/spark/examples&lt;/a&gt;.&lt;/p&gt;
+&lt;div class=&#39;full zoomable&#39;&gt;&lt;img src=&#39;/images/github-examples.png&#39; /&gt;&lt;/div&gt;
+&lt;p&gt;We are working on providing a mechanism to enable community contributions of example apps. In addition, this feature provides the first step toward libraries, a frequently requested feature; now that we have a linkage between the Spark IDE and Github, it opens up a lot of opportunities for collaborative coding through Spark.&lt;/p&gt;
+
+&lt;h3 id=&#39;proper_authentication_for_multiple_clients&#39;&gt;Proper authentication for multiple clients&lt;/h3&gt;
+
+&lt;p&gt;Previously the Spark API put in place basic authentication where each user has one API token, which can be used to securely access and control that user&amp;#8217;s Spark Core.&lt;/p&gt;
+&lt;div class=&#39;full zoomable&#39;&gt;&lt;img src=&#39;/images/access-token.png&#39; /&gt;&lt;/div&gt;
+&lt;p&gt;This feature, however, was limited to only one access token. This means that if multiple clients were to use the access token (for instance, the Spark iOS app and the user&amp;#8217;s own webapp), either one could request a new access token, revoking the previous token, and causing a failure in the other app.&lt;/p&gt;
+
+&lt;p&gt;This week, we implemented a feature allowing multiple clients. This means that two or more apps can request their own access token without revoking each others&amp;#8217; access. Access tokens can be managed through the Spark API.&lt;/p&gt;
+
+&lt;h5 id=&#39;generate_a_new_access_token&#39;&gt;Generate a new access token&lt;/h5&gt;
+
+&lt;pre&gt;&lt;code&gt;POST /oauth/token
+
+# Using curl in your terminal
+curl https://api.spark.io/oauth/token -u spark:spark \
+     -d grant_type=password -d username=joe@example.com \
+     -d password=SuperSecret
+
+# A typical JSON response will look like this
+{
+    &amp;quot;access_token&amp;quot;: &amp;quot;254406f79c1999af65a7df4388971354f85cfee9&amp;quot;,
+    &amp;quot;token_type&amp;quot;: &amp;quot;bearer&amp;quot;,
+    &amp;quot;expires_in&amp;quot;: 7776000
+}&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;When creating a new access token, you need to specify several additional pieces of info.&lt;/p&gt;
+
+&lt;p&gt;You must give a valid client ID and password in HTTP Basic Auth. Any client ID will work right now, so we suggest &lt;code&gt;spark:spark&lt;/code&gt;. In the POST body, you need three parameters:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;grant_type=password&lt;/li&gt;
+
+&lt;li&gt;username=YOUR_EMAIL@ADDRE.SS&lt;/li&gt;
+
+&lt;li&gt;password=YOUR_PASSWORD&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For now, Spark Build will list the single most recently created token.&lt;/p&gt;
+
+&lt;h5 id=&#39;list_all_your_tokens&#39;&gt;List all your tokens&lt;/h5&gt;
+
+&lt;pre&gt;&lt;code&gt;GET /v1/access_tokens
+
+# Using curl in your terminal
+curl https://api.spark.io/v1/access_tokens \
+    -u joe@example.com:SuperSecret
+
+# Example JSON response
+[
+    {
+        &amp;quot;token&amp;quot;: &amp;quot;b5b901e8760164e134199bc2c3dd1d228acf2d98&amp;quot;,
+        &amp;quot;expires_at&amp;quot;: &amp;quot;2014-04-27T02:20:36.177Z&amp;quot;,
+        &amp;quot;client&amp;quot;: &amp;quot;spark&amp;quot;
+    },
+    {
+        &amp;quot;token&amp;quot;: &amp;quot;ba54b6bb71a43b7612bdc7c972914604a078892b&amp;quot;,
+        &amp;quot;expires_at&amp;quot;: &amp;quot;2014-04-27T06:31:08.991Z&amp;quot;,
+        &amp;quot;client&amp;quot;: &amp;quot;spark&amp;quot;
+    }
+]&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You can list all your access tokens by passing your email address and password in an HTTP Basic Auth header to &lt;code&gt;/v1/access_tokens&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h5 id=&#39;delete_an_access_token&#39;&gt;Delete an access token&lt;/h5&gt;
+
+&lt;pre&gt;&lt;code&gt;DELETE /v1/access_tokens/:token
+
+# Using curl in your terminal
+curl https://api.spark.io/v1/access_tokens/b5b901e8760164e134199bc2c3dd1d228acf2d98 \
+     -u joe@example.com:SuperSecret -X DELETE
+
+# Example JSON response
+{
+    &amp;quot;ok&amp;quot;: true
+}&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you have a bunch of unused tokens and want to clean up, you can delete tokens.&lt;/p&gt;
+
+&lt;p&gt;Just as for listing them, send your username and password in an HTTP Basic Auth header.&lt;/p&gt;
+
+&lt;p&gt;Complete documentation for authentication on the Spark API can be found on &lt;a href=&#39;http://docs.spark.io/#/api/spark-cloud-api-authentication&#39;&gt;our docs site&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3 id=&#39;more_reliable_firmware&#39;&gt;More reliable firmware&lt;/h3&gt;
+
+&lt;p&gt;Until this week, some users have been reporting an issue that has been referred to as the &amp;#8220;Cyan Flash of Death&amp;#8221;. Due to an internal failure in the CC3000, on some networks after anytime from a few minutes to a few hours, the Core would go mute, and would be unresponsive until manually reset.&lt;/p&gt;
+
+&lt;p&gt;Because the underlying issue here is within the CC3000 where we do not have complete visibility, we are working with Texas Instruments to understand the root cause of the failure. In the meantime, we have issued a workaround; when the Core disconnects, it will now reset the Wi-Fi module so that it will recover. So while some users will still encounter occasional disconnects, they should now be temporary, and the Core will re-connect automatically within a minute or two.&lt;/p&gt;
+
+&lt;p&gt;We will be continuing to debug this issue during our next Sprint.&lt;/p&gt;
+
+&lt;h3 id=&#39;sparkdisconnect_and_sparkconnect&#39;&gt;Spark.disconnect() and Spark.connect()&lt;/h3&gt;
+
+&lt;p&gt;In the Spark community, many users were requesting a mechanism to take control over the connection to the Spark Cloud. We have now implemented two functions, &lt;code&gt;Spark.disconnect()&lt;/code&gt; and &lt;code&gt;Spark.connect()&lt;/code&gt;, which will let users temporarily deactivate and re-activate the connection to the Spark Cloud.&lt;/p&gt;
+
+&lt;h3 id=&#39;better_code_parsing&#39;&gt;Better code parsing&lt;/h3&gt;
+
+&lt;p&gt;Like the Arduino IDE, the Spark IDE has a pre-processor that adds a little magic to your code. The pre-processor automatically includes the Spark libraries and generates function prototypes that declare functions at the beginning of your code so that they can be used anywhere.&lt;/p&gt;
+
+&lt;p&gt;The pre-processor uses a bunch of regular expressions (regex), and previously had a few bugs, such as parsing functions within multi-line comments.&lt;/p&gt;
+
+&lt;p&gt;This week, the pre-processor went through an overhaul, so more of your code will compile successfully.&lt;/p&gt;
+
+&lt;h3 id=&#39;miscellaneous_tweaks_and_improvements&#39;&gt;Miscellaneous tweaks and improvements&lt;/h3&gt;
+
+&lt;p&gt;In addition to the larger features and bugfixes above, we made a number of minor improvements, such as:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;The Spark Build IDE should now show a &amp;#8216;log in&amp;#8217; screen rather than a &amp;#8216;sign up&amp;#8217; screen if you&amp;#8217;ve already been to the site and created an account/logged in before.&lt;/li&gt;
+
+&lt;li&gt;We purchased a wildcard certificate so that we can register more domains. Now, &lt;a href=&#39;http://community.sparkdevices.com&#39;&gt;community.sparkdevices.com&lt;/a&gt; is &lt;a href=&#39;http://community.spark.io&#39;&gt;community.spark.io&lt;/a&gt;!&lt;/li&gt;
+
+&lt;li&gt;We improved our staging environment for the Cloud, Core, and IDE. This won&amp;#8217;t have any direct effect on Spark users, since it is for internal development, but it does mean that we can better test changes internally before pushing them out.&lt;/li&gt;
+
+&lt;li&gt;We merged a number of pull requests from the community, including &lt;a href=&#39;https://community.spark.io/t/important-7-bit-i2c-addresses-are-now-working-01-24-2014/2376?u=zach&#39;&gt;a fix to I2C addressing&lt;/a&gt;. Some of our best features and bug fixes are generated by the community; we happily accept pull requests to our firmware and other open source software!&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#39;next_up_multiple_files_and_further_robustness_improvements&#39;&gt;Next up: Multiple files and further robustness improvements&lt;/h3&gt;
+
+&lt;p&gt;As mentioned above, one of our most frequent feature requests is adding a capability for creating and sharing libraries for the Spark Core. While our example apps feature above was the first step, the next major step forward will be creating the capability for apps that include multiple files. This feature will be one of our top priorities during Sprint 5. Once this is complete, we will be able to link in community-generated libraries, most likely during Sprint 6.&lt;/p&gt;
+
+&lt;p&gt;In addition, while we have made a number of changes improving the robustness of the Spark Core, there&amp;#8217;s still work to do. During Sprint 5, we hope to squash the &amp;#8220;Cyan Flash of Death&amp;#8221; for good, and make other changes to ensure that the Spark Core stays connected and running your code consistently.&lt;/p&gt;</description>
+    </item>
+    
+    
+    
+    <item>
+      <title>Building an open source Nest</title>
+      <link>http://blog.spark.io/2014/01/17/open-source-thermostat/</link>
+      <pubDate>Fri, 17 Jan 2014 00:00:00 +0000</pubDate>
+      <author></author>
+      <guid>http://blog.spark.io/2014/01/17/open-source-thermostat</guid>
+      <description>&lt;p&gt;Earlier this week, Google bought Nest, a connected devices company, for $3.2 billion. This might seem like an ungodly sum for a company that makes thermostats and smoke detectors, but it makes absolute sense. Nest&amp;#8217;s products are beautifully designed, their team is overflowing with talent, and they were the first company to figure out what the &amp;#8220;Internet of Things&amp;#8221; means to consumers and deliver products that people actually &lt;em&gt;want&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;But in order to do this, Nest had to spend millions of dollars on R&amp;amp;D to build the basic infrastructure behind the product. The high cost made it impossible for anyone but the extremely well-capitalized to enter the market and create connected things.&lt;/p&gt;
+
+&lt;p&gt;Well, we want to change that. At Spark, we&amp;#8217;re making it easier to bring connected devices to market with the Spark Core, our Wi-Fi development kit, and the Spark Cloud, our cloud service for connected devices. And to prove it, we built our own approximation of the Nest Learning Thermostat in one day — and we&amp;#8217;ve open sourced everything. In this process, we&amp;#8217;ve come to respect the incredible technical challenges that Nest has solved while also coming to understand how much the game has changed since they first started.&lt;/p&gt;
+&lt;video loop=&#39;true&#39; muted=&#39;true&#39; width=&#39;820&#39;&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/finalproduct.mp4&#39; type=&#39;video/mp4&#39; /&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/finalproduct.webm&#39; type=&#39;video/webm&#39; /&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;
+&lt;p&gt;Fair warning - we&amp;#8217;re not claiming to have matched the Nest thermostat in a day; far from it. But remember — every polished product starts as a rough prototype. As Alexis Ohanian &lt;a href=&#39;https://twitter.com/towynlin/status/421456323138441216&#39;&gt;said&lt;/a&gt; last week, &amp;#8220;The first version of everything you love is janky!&amp;#8221;&lt;/p&gt;
+
+&lt;h2 id=&#39;hardware&#39;&gt;Hardware&lt;/h2&gt;
+
+&lt;p&gt;First, you need hardware. In our case, that means sensors for temperature and humidity, plus a motion sensor to figure out whether you&amp;#8217;re home, and relays to control the furnace and the fan. We also need a display so you can see the current temperature, and an enclosure to protect the messy bits.&lt;/p&gt;
+&lt;video loop=&#39;true&#39; muted=&#39;true&#39; width=&#39;820&#39;&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/breadboarded.mp4&#39; type=&#39;video/mp4&#39; /&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/breadboarded.webm&#39; type=&#39;video/webm&#39; /&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;
+&lt;p&gt;The first thing we did this morning (after whiteboarding our attack plan) was to breadboard the hardware. Breadboarding is a non-permanent way to create an early hardware prototype. We chose a number of components for this product:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;The &lt;a href=&#39;http://www.spark.io&#39;&gt;Spark Core&lt;/a&gt; served as our connected brain.&lt;/li&gt;
+
+&lt;li&gt;We display the temperature on a few &lt;a href=&#39;http://www.adafruit.com/products/870&#39;&gt;Adafruit 8x8 LED matrices&lt;/a&gt;. The interface for the displays is a common I2C bus.&lt;/li&gt;
+
+&lt;li&gt;The primary sensor is a &lt;a href=&#39;http://www.digikey.com/product-detail/en/HIH6131-021-001/480-3652-6-ND/2704706&#39;&gt;Honeywell HumidIcon&lt;/a&gt; temperature and humidity sensor, which shares the I2C bus with the displays.&lt;/li&gt;
+
+&lt;li&gt;For our MVP, we decided a couple LEDs could represent whether the heat and fan were on. In the end the same pins would be connected to relays instead of the LEDs.&lt;/li&gt;
+
+&lt;li&gt;If you want to save energy when a person&amp;#8217;s not home, then you need a way to know when they are home so you can err on the side of comfort again. We added a &lt;a href=&#39;http://pewa.panasonic.com/assets/pcsd/catalog/napion-catalog.pdf&#39;&gt;Panasonic PIR motion detector&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;All in all, it took about an hour to throw together this breadboarded prototype, although we had to order the components a couple of days beforehand. It took another couple of hours to pull together working firmware (see the software section below).&lt;/p&gt;
+&lt;video loop=&#39;true&#39; muted=&#39;true&#39; width=&#39;820&#39;&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/cncmilled.mp4&#39; type=&#39;video/mp4&#39; /&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/cncmilled.webm&#39; type=&#39;video/webm&#39; /&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;
+&lt;p&gt;The next step is to build an enclosure. The Nest enclosure is glass and aluminum, which are both very pretty but not very handy for prototyping. Instead, we chose acrylic and wood.&lt;/p&gt;
+
+&lt;p&gt;First, we CNC milled two wooden rings: one to act as a stationary base, and other to spin freely as a temperature controller (turn the ring clockwise to increase the temperature, and counterclockwise to decrease the temperature).&lt;/p&gt;
+&lt;video loop=&#39;true&#39; muted=&#39;true&#39; width=&#39;820&#39;&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/lasercut.mp4&#39; type=&#39;video/mp4&#39; /&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/lasercut.webm&#39; type=&#39;video/webm&#39; /&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;
+&lt;p&gt;Next, we laser cut three acrylic disks: one to act as the faceplate (which we later sanded to make it frosty), a second to act as the wall mounting plate, and a third connects the spinning wooden ring to a potentiometer.&lt;/p&gt;
+&lt;video loop=&#39;true&#39; muted=&#39;true&#39; width=&#39;820&#39;&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/enclosure.mp4&#39; type=&#39;video/mp4&#39; /&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/enclosure.webm&#39; type=&#39;video/webm&#39; /&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;
+&lt;p&gt;Once we completed the enclosure, we converted our breadboarded circuit into a more permanent design by permanently soldering the components.&lt;/p&gt;
+&lt;video loop=&#39;true&#39; muted=&#39;true&#39; width=&#39;820&#39;&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/mohitsoldering.mp4&#39; type=&#39;video/mp4&#39; /&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/mohitsoldering.webm&#39; type=&#39;video/webm&#39; /&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;
+&lt;h2 id=&#39;software&#39;&gt;Software&lt;/h2&gt;
+
+&lt;p&gt;Next, you need software. Some of this software runs on the thermostat (often called &amp;#8216;firmware&amp;#8217;), reading data from the sensors, controlling the relays, and displaying data on the screen. But since this is a connected thermostat, we also want a web interface so that it can be controlled from your smartphone or computer. And since it&amp;#8217;s a learning thermostat, we also want to do some machine learning so that we can over time improve your comfort and energy efficiency. This software will run in the cloud.&lt;/p&gt;
+&lt;video loop=&#39;true&#39; muted=&#39;true&#39; width=&#39;820&#39;&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/workingproto.mp4&#39; type=&#39;video/mp4&#39; /&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/workingproto.webm&#39; type=&#39;video/webm&#39; /&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;
+&lt;p&gt;&amp;#8216;Firmware&amp;#8217; is called &lt;em&gt;firm&lt;/em&gt; because it&amp;#8217;s traditionally more locked down than software, since it runs on a little chip that usually is never accessed again after the product is delivered to the customer. But adding an internet connection changes things pretty significantly. Firmware is no longer &lt;em&gt;firm&lt;/em&gt; when you can update it from anywhere with the click of a button. With a Spark Core, you can flash new code onto your chip using our web IDE.&lt;/p&gt;
+&lt;video loop=&#39;true&#39; muted=&#39;true&#39; width=&#39;820&#39;&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/joescode.mp4&#39; type=&#39;video/mp4&#39; /&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/joescode.webm&#39; type=&#39;video/webm&#39; /&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;
+&lt;p&gt;Our thermostat is complemented with a cloud-based web app that handles all of the complex logic of the thermostat. By doing this in the cloud, we can iterate faster using high-level programming languages and frameworks like Ruby on Rails rather than low-level embedded C.&lt;/p&gt;
+
+&lt;p&gt;The Spark Cloud exposes your connected device through a REST API. That means that you can interact with it from any language that can generate HTTP requests, which is basically anything.&lt;/p&gt;
+
+&lt;p&gt;The beauty of a connected device is that it can be constantly improving, whether it&amp;#8217;s by updating the firmware, updating the cloud software, or by using machine learning to optimize and improve the logic of the device.&lt;/p&gt;
+&lt;video loop=&#39;true&#39; muted=&#39;true&#39; width=&#39;820&#39;&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/softwareinaction.mp4&#39; type=&#39;video/mp4&#39; /&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/softwareinaction.webm&#39; type=&#39;video/webm&#39; /&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;
+&lt;p&gt;Our user interface is a simple web app with a javascript knob that lets you select the desired temperature. The UI also includes a graph of historical temperatures, because data.&lt;/p&gt;
+
+&lt;h2 id=&#39;connectivity&#39;&gt;Connectivity&lt;/h2&gt;
+
+&lt;p&gt;Once you&amp;#8217;ve got your hardware and your software, it&amp;#8217;s time to link the two worlds.&lt;/p&gt;
+
+&lt;p&gt;Somehow you&amp;#8217;ve got to get your thing online, and there are dozens of ways to do this. The simplest method is by adding a Wi-Fi module, so your product can act as a client on your local Wi-Fi network.&lt;/p&gt;
+
+&lt;p&gt;The &lt;a href=&#39;http://www.spark.io&#39;&gt;Spark Core&lt;/a&gt; has a Wi-Fi module built in, and because it&amp;#8217;s integrated with the micro-controller, &amp;#8216;connectivity&amp;#8217; is made easy. The Core automatically connects to the Spark Cloud through an encrypted tunnel, so you&amp;#8217;ve got a secure connection to a cloud gateway out of the box. No programming the Wi-Fi module, and no finding or building communications protocols.&lt;/p&gt;
+
+&lt;h2 id=&#39;putting_it_all_together&#39;&gt;Putting it all together&lt;/h2&gt;
+
+&lt;p&gt;Once our thermostat was complete, it was time to assemble it all together into the final package and mount it on the wall.&lt;/p&gt;
+&lt;video loop=&#39;true&#39; muted=&#39;true&#39; width=&#39;820&#39;&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/underthecovers.mp4&#39; type=&#39;video/mp4&#39; /&gt;
+  &lt;source src=&#39;http://s3.amazonaws.com/blog.spark.io/underthecovers.webm&#39; type=&#39;video/webm&#39; /&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;
+&lt;p&gt;All in, we spent about $70 on components to put this together (including $39 for the Spark Core); the wood and acrylic were free. We started working at 10am and finished at 3am, with 3.5 engineers involved (one went to bed early), and the only work we did in advance was order the electronic components.&lt;/p&gt;
+
+&lt;h2 id=&#39;get_excited_crazy_things_are_possible&#39;&gt;Get excited, crazy things are possible.&lt;/h2&gt;
+
+&lt;p&gt;We&amp;#8217;re not saying that you can build a $3.2 billion company in a day. But we &lt;em&gt;are&lt;/em&gt; saying that you can build a $3.2 billion company, and it&amp;#8217;s easier now than it&amp;#8217;s ever been before.&lt;/p&gt;
+
+&lt;p&gt;Connected devices/Internet of Things/M2M/Industrial Internet is a certified &lt;strong&gt;big deal&lt;/strong&gt;, and the Nest acquisition proves it. It doesn&amp;#8217;t matter whether you&amp;#8217;re a software developer with no hardware experience, an embedded designer with no web experience, or a psych major with no experience whatsoever. This is the next frontier, and it&amp;#8217;s time to check it out.&lt;/p&gt;
+
+&lt;p&gt;Your billion dollar company starts with a million dollar product, and your million dollar product starts with a hundred dollar prototype. So what are you waiting for?&lt;/p&gt;
+
+&lt;p&gt;To download the open source files for the Spark thermostat, visit our &lt;a href=&#39;http://www.github.com/spark/thermostat&#39;&gt;Github page&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Follow us on &lt;a href=&#39;http://www.twitter.com/sparkdevices&#39;&gt;Twitter&lt;/a&gt;, discuss at &lt;a href=&#39;https://news.ycombinator.com/item?id=7075626&#39;&gt;Hacker News&lt;/a&gt;, and get a Spark Core at &lt;a href=&#39;http://www.spark.io&#39;&gt;spark.io&lt;/a&gt;.&lt;/p&gt;</description>
+    </item>
+    
+    
+    
+    <item>
+      <title>So many new features!</title>
+      <link>http://blog.spark.io/2013/12/21/sprint-two/</link>
+      <pubDate>Sat, 21 Dec 2013 00:00:00 +0000</pubDate>
+      <author></author>
+      <guid>http://blog.spark.io/2013/12/21/sprint-two</guid>
+      <description>&lt;p&gt;So much to share from this sprint! The last two weeks have been a whirlwind. First of all, we have a new blog! Welcome.&lt;/p&gt;
+
+&lt;h2 id=&#39;web_ide&#39;&gt;Web IDE&lt;/h2&gt;
+
+&lt;p&gt;Three new features: you can now claim, unclaim, and rename Cores through Spark Build. Other improvements:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Clearer error messages on Flash/Verify&lt;/p&gt;
+&lt;/li&gt;
+
+&lt;li&gt;
+&lt;p&gt;Case insensitive usernames&lt;/p&gt;
+&lt;/li&gt;
+
+&lt;li&gt;
+&lt;p&gt;Flash automatically saves&lt;/p&gt;
+&lt;/li&gt;
+
+&lt;li&gt;
+&lt;p&gt;Verify and Flash are ten times faster!&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;We incorporated the winning makefile &lt;a href=&#39;https://community.sparkdevices.com/t/feature-bounty-improve-our-makefile/567&#39;&gt;feature bounty&lt;/a&gt; pull request from &lt;a href=&#39;https://community.sparkdevices.com/users/mattande/activity&#39;&gt;Matt Anderson&lt;/a&gt; into the compile server.&lt;/li&gt;
+
+&lt;li&gt;We don&amp;#8217;t recompile your firmware if you haven&amp;#8217;t edited the code. First hitting Verify, then hitting Flash now only results in one compile cycle.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#39;documentation&#39;&gt;Documentation&lt;/h2&gt;
+
+&lt;p&gt;We added some great docs to help users better understand the colors of the RGB LED on the Core.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;On the &amp;#8220;Connecting your Core&amp;#8221; page, there&amp;#8217;s a new, highly detailed section called &lt;a href=&#39;http://docs.spark.io/#/connect/troubleshooting-by-color&#39;&gt;Troubleshooting by Color&lt;/a&gt; that helps you understand exactly what&amp;#8217;s happening.&lt;/li&gt;
+
+&lt;li&gt;On the &amp;#8220;Getting Started&amp;#8221; page, in &lt;a href=&#39;http://docs.spark.io/#/start/step-3-connect-the-core-to-wi-fi&#39;&gt;Step 3&lt;/a&gt;, we added a click-through animation of the Core&amp;#8217;s flashing/breathing LED to show all the steps one sees when setting up a Core the first time.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;There&amp;#8217;s also a &lt;a href=&#39;http://docs.spark.io/#/examples/local-communication&#39;&gt;new annotated example&lt;/a&gt; showing how to do local communicaton with your Core. Simple &lt;a href=&#39;https://github.com/spark/local-communication-example&#39;&gt;example servers&lt;/a&gt; are on GitHub in ruby and node.js.&lt;/p&gt;
+
+&lt;p&gt;Two big forum posts in case you missed them:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#39;https://community.sparkdevices.com/t/spark-core-troubleshooting-guide-spark-team/696&#39;&gt;Troubleshooting Guide&lt;/a&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;a href=&#39;https://community.sparkdevices.com/t/sparkbot-spark-core-roomba/625&#39;&gt;SparkBot = Spark Core + Roomba&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#39;firmware_improvements&#39;&gt;Firmware Improvements&lt;/h2&gt;
+
+&lt;p&gt;You now have control over the RGB LED on the Core! To stop breathing cyan and turn it red for half a second:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;RGB.control(true);
+RGB.color(255, 0, 0);
+delay(500);
+RGB.control(false);&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We&amp;#8217;ll add this to the docs soon, but the arguments to &lt;code&gt;RGB.color()&lt;/code&gt; are red, green, and blue values 0–255.&lt;/p&gt;
+
+&lt;p&gt;We also improved the USB Serial Wi-Fi credentials tool; it now supports WPA2, WPA, WEP and unsecured networks.&lt;/p&gt;
+
+&lt;p&gt;Newly implemented Arduino/Wiring functions:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;delayMicroseconds()&lt;/li&gt;
+
+&lt;li&gt;micros()&lt;/li&gt;
+
+&lt;li&gt;shiftIn()&lt;/li&gt;
+
+&lt;li&gt;shiftOut()&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Also, you can now easily get your Core ID in firmware with &lt;code&gt;Spark.deviceID()&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;We released an open source patch programmer for upgrading the CC3000 firmware.&lt;/p&gt;
+
+&lt;p&gt;We improved the stability of over-the-air firmware updates in the face of lossy networks.&lt;/p&gt;
+
+&lt;h2 id=&#39;cloud&#39;&gt;Cloud&lt;/h2&gt;
+
+&lt;p&gt;You can check the health status of the Spark Cloud at &lt;a href=&#39;http://status.spark.io/&#39;&gt;status.spark.io&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;We squashed some memory leaks in the Device Service so your Core connection is now stable for longer.&lt;/p&gt;
+
+&lt;h2 id=&#39;mobile_apps&#39;&gt;Mobile Apps&lt;/h2&gt;
+
+&lt;p&gt;The Android app can now handle unsecured Wi-Fi networks.&lt;/p&gt;
+
+&lt;p&gt;Open sourcing the mobile apps is high on the priority list, but we&amp;#8217;re blocked by licensing issues right now. More info in January, but we will likely release the Android app first and the iOS app later.&lt;/p&gt;</description>
+    </item>
+    
+    
+
+  </channel> 
+</rss>
